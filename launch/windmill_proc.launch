@@ -1,0 +1,13 @@
+<launch>
+<arg name="manager_name" default="nodelet_manager" />
+<node pkg="nodelet" type="nodelet" name="$(arg manager_name)" args="manager" output="screen" >
+    <param name="num_worker_threads" value="8" />
+</node>
+
+
+<node pkg="nodelet" type="nodelet" name="opvn_processor"
+    args="load rm_opvn_windmill/OpvnProcessor $(arg manager_name)" >
+    <rosparam file="$(find rm_opvn_windmill)/config/opvn_windmill.yaml" command="load" />
+</node>
+</launch>
+

@@ -1,0 +1,7 @@
+<library path="lib/librm_opvn_windmill">
+    <class name="rm_opvn_windmill/OpvnProcessor"
+           type="rm_opvn_windmill::OpvnProcessor"
+           base_class_type="nodelet::Nodelet">
+        <description>This is a openvino processor plugin.</description>
+    </class>
+</library>
