@@ -45,8 +45,8 @@ namespace rm_opvn_windmill {
         if(!nh.getParam("input_col", input_col_))
             ROS_WARN("No input_col specified");
 
-        xml_path_ = ros::package::getPath("rm_opvn_proc") + xml_path_;
-        bin_path_ = ros::package::getPath("rm_opvn_proc") + bin_path_;
+        xml_path_ = ros::package::getPath("rm_opvn_windmill") + xml_path_;
+        bin_path_ = ros::package::getPath("rm_opvn_windmill") + bin_path_;
         ROS_INFO("model_path:%s", (xml_path_+bin_path_).c_str());
 
         //Initialize the inference parameters
@@ -70,7 +70,7 @@ namespace rm_opvn_windmill {
 
         it_ = make_shared<image_transport::ImageTransport>(nh_);
         debug_pub_ = it_->advertise("debug_image", 1);
-        cam_sub_ = it_->subscribeCamera("/hk_camera/image_raw", 1, &OpvnProcessor::callback, this);
+        cam_sub_ = it_->subscribeCamera("/galaxy_camera/image_raw", 1, &OpvnProcessor::callback, this);
 //        bag_sub_ = it_->subscribe("/hk_camera/image_raw", 1, &OpvnProcessor::callback, this);
 
         target_pub_ = nh.advertise<decltype(target_array_)>("/processor/result_msg", 1);
@@ -137,10 +137,19 @@ namespace rm_opvn_windmill {
         objects_ = proposals;
         int count = proposals.size();
 
+//        target_array_.detections.clear();
+//        if(count == 0){
+//            rm_msgs::TargetDetection one_target;
+//            one_target.id = 0;
+//            target_array_.detections.emplace_back(one_target);
+//        }
+
         for (int i = 0; i < count; i++) {
             rm_msgs::TargetDetection one_target;
             one_target.confidence = proposals[i].prob;
-            one_target.id = proposals[i].label;
+            one_target.id = 1;
+            if(proposals[i].label == 0)
+                continue;
             int32_t temp[10];
             for (int k = 0; k < 5; k++)
             {
@@ -154,6 +163,10 @@ namespace rm_opvn_windmill {
             memcpy(&one_target.pose.orientation.w, &temp[8], sizeof(int32_t) * 2);
             target_array_.detections.emplace_back(one_target);
 
+            double length = pow(pow(proposals[i].points[0]/r_ - proposals[i].points[2]/r_, 2) + pow(proposals[i].points[1]/r_ - proposals[i].points[3]/r_, 2), 0.5);
+            double width = pow(pow(proposals[i].points[2]/r_ - proposals[i].points[4]/r_, 2) + pow(proposals[i].points[3]/r_ - proposals[i].points[5]/r_, 2), 0.5);
+            double ratio = length / width;
+            //ROS_INFO("length:%f, width: %fratio:%f", length, width, ratio);
 //            int32_t data[4 * 2];
 //            memcpy(&data[0], &one_target.pose.position.x, sizeof(int32_t) * 2);
 //            memcpy(&data[2], &one_target.pose.orientation.y, sizeof(int32_t) * 2);
@@ -163,7 +176,6 @@ namespace rm_opvn_windmill {
 //                ROS_INFO("%d:%d", i, data[i]);
 //            }
         }
-
     }
 
     void OpvnProcessor::draw() {
@@ -175,7 +187,11 @@ namespace rm_opvn_windmill {
             line(image_raw_, Point(object.points[6]/r_, object.points[7]/r_), Point(object.points[8]/r_, object.points[9]/r_), Scalar(0, 255, 0), 2, 4);
             line(image_raw_, Point(object.points[8]/r_, object.points[9]/r_), Point(object.points[0]/r_, object.points[1]/r_), Scalar(0, 255, 0), 2, 4);
 //            cv::putText(image_raw_, to_string(object.label), cv::Point(object.points[0]/r_, object.points[3]/r_-40),cv::FONT_HERSHEY_SIMPLEX, 1, Scalar (0, 255, 0), 3);
-//            ROS_INFO("%d", object.)
+            cv::putText(image_raw_, to_string(1), cv::Point(object.points[0]/r_, object.points[1]/r_),cv::FONT_HERSHEY_SIMPLEX, 1, Scalar (0, 255, 0), 3);
+            cv::putText(image_raw_, to_string(2), cv::Point(object.points[2]/r_, object.points[3]/r_),cv::FONT_HERSHEY_SIMPLEX, 1, Scalar (0, 255, 0), 3);
+            cv::putText(image_raw_, to_string(3), cv::Point(object.points[6]/r_, object.points[7]/r_),cv::FONT_HERSHEY_SIMPLEX, 1, Scalar (0, 255, 0), 3);
+            cv::putText(image_raw_, to_string(4), cv::Point(object.points[8]/r_, object.points[9]/r_),cv::FONT_HERSHEY_SIMPLEX, 1, Scalar (0, 255, 0), 3);
+            //            ROS_INFO("%d", object.)
 
 ////            speed_solver
 //            if(object.label == 1){
